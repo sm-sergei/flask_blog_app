@@ -129,7 +129,7 @@ def my_blogs():
     if my_blogs:
         return render_template('my-blogs.html', my_blogs=my_blogs)
     else:
-        return render_template('my_blogs', my_blogs=None)
+        return render_template('my-blogs.html', my_blogs=None)
 
 
     return render_template('my-blogs.html')
@@ -157,10 +157,15 @@ def edit_blog(id):
         blog_form['body'] = blog[3]
         return render_template('edit-blog.html', blog_form=blog_form)
 
-@app.route('/delete-blog/<int:id>', methods=['POST'])
+@app.route('/delete-blog/<int:id>')
 def delete_blog(id):
     """Функция удаляет кокретный блог по его id"""
-    return 'Successfully deleted!'
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM blogs WHERE blog_id = {}".format(id))
+    conn.commit()
+    flash("You blog has been deleted!", "success")
+    return redirect('/my-blogs')
 
 @app.route('/logout/')
 def logout():

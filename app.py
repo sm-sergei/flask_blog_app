@@ -121,11 +121,41 @@ def write_blog():
 
 @app.route('/my-blogs/')
 def my_blogs():
+    author = session['first_name'] + " " + session['last_name']
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM blogs WHERE author = %s", (author,))
+    my_blogs = cur.fetchall()
+    if my_blogs:
+        return render_template('my-blogs.html', my_blogs=my_blogs)
+    else:
+        return render_template('my_blogs', my_blogs=None)
+
+
     return render_template('my-blogs.html')
 
 @app.route('/edit-blog/<int:id>', methods=['GET', 'POST'])
 def edit_blog(id):
-    return render_template('edit-blog.html', blog_id=id)
+    if request.method == "POST":
+        conn = get_db_connection()
+        cur = conn.cursor()
+        title = request.form['title']
+        body = request.form['body']
+        cur.execute("UPDATE blogs SET title = %s, body = %s WHERE blog_id = %s", (title, body, id))
+        conn.commit()
+        cur.close()
+        conn.close()
+        flash("Blog is updated successfully!", "success")
+        return redirect("/blogs/{}".format(id))
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM blogs WHERE blog_id = {}".format(id))
+    blog = cur.fetchone()
+    if blog:
+        blog_form = {}
+        blog_form['title'] = blog[1]
+        blog_form['body'] = blog[3]
+        return render_template('edit-blog.html', blog_form=blog_form)
 
 @app.route('/delete-blog/<int:id>', methods=['POST'])
 def delete_blog(id):
